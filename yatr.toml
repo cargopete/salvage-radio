@@ -1,0 +1,85 @@
+# Salvage Radio — task runner
+# Requires: cargo, cargo-component, wkg, wasm-tools
+
+# ── Setup ─────────────────────────────────────────────────────────────────────
+
+[tasks.setup]
+desc = "Install required tools and add wasm32-wasip2 target"
+run = [
+    "cargo install cargo-component wkg wasm-tools",
+    "rustup target add wasm32-wasip2",
+]
+
+[tasks.fetch-wit]
+desc = "Fetch WASI WIT dependencies into wit/deps/ (run once after clone)"
+no_cache = true
+run = ["wkg wit fetch"]
+
+# ── Host ──────────────────────────────────────────────────────────────────────
+
+[tasks.build-host]
+desc = "Build the host binary (release)"
+run = ["cargo build --release -p salvage-radio"]
+sources = ["crates/host/src/**/*.rs", "crates/host/Cargo.toml", "Cargo.lock"]
+outputs = ["target/release/salvage-radio"]
+
+[tasks.check-host]
+desc = "Cargo check the host crate"
+run = ["cargo check -p salvage-radio"]
+
+[tasks.run]
+desc = "Run the host (debug)"
+no_cache = true
+run = ["cargo run -p salvage-radio"]
+
+# ── Stations ──────────────────────────────────────────────────────────────────
+
+[tasks.build-tech]
+desc = "Build the TECH station component (release)"
+run = ["cargo component build --release"]
+cwd = "crates/stations/tech"
+sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
+outputs = ["target/wasm32-wasip2/release/station_tech.wasm"]
+
+[tasks.check-tech]
+desc = "cargo-component check on the TECH station"
+run = ["cargo component check"]
+cwd = "crates/stations/tech"
+
+[tasks.inspect-tech]
+desc = "Show the exported WIT interface of the built TECH station"
+depends = ["build-tech"]
+run = ["wasm-tools component wit crates/stations/tech/target/wasm32-wasip2/release/station_tech.wasm"]
+
+# ── All ───────────────────────────────────────────────────────────────────────
+
+[tasks.build]
+desc = "Build everything"
+depends = ["build-host", "build-tech"]
+
+# ── Dev tooling ───────────────────────────────────────────────────────────────
+
+[tasks.fmt]
+desc = "Format all crates"
+run = [
+    "cargo fmt -p salvage-radio",
+    "cargo fmt --manifest-path crates/station-sdk/Cargo.toml",
+    "cargo fmt --manifest-path crates/stations/tech/Cargo.toml",
+]
+
+[tasks.lint]
+desc = "Clippy on host and tech station"
+run = [
+    "cargo clippy -p salvage-radio -- -D warnings",
+]
+
+[tasks.lint-tech]
+desc = "cargo-component clippy on tech station"
+run = ["cargo component clippy -- -D warnings"]
+cwd = "crates/stations/tech"
+
+# ── Milestones ────────────────────────────────────────────────────────────────
+
+[tasks.m0]
+desc = "M0 acceptance: fetch WIT deps, build tech station, inspect interface"
+depends = ["fetch-wit", "inspect-tech"]

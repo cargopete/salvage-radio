@@ -153,9 +153,10 @@ No deadlines. This is a hobby project.
 - [`cargo-component`](https://github.com/bytecodealliance/cargo-component)
 - [`wkg`](https://github.com/bytecodealliance/wkg)
 - [`wasm-tools`](https://github.com/bytecodealliance/wasm-tools)
+- [`yatr`](https://github.com/cargopete/yatr)
 
 ```sh
-just setup
+yatr setup
 ```
 
 ---
@@ -164,18 +165,18 @@ just setup
 
 ```sh
 # First time after cloning — fetches WASI WIT deps into wit/deps/
-just fetch-wit
+yatr fetch-wit
 
 # Build host binary + all station components
-just build
+yatr build
 
 # Run
-just run
+yatr run
 ```
 
 ```sh
 # M0 acceptance: build tech station and inspect its exported interface
-just m0
+yatr m0
 ```
 
 ---
@@ -199,7 +200,7 @@ crates/
   stations/
     tech/               # TECH 104.7 — reference implementation
 stations.toml           # dial order and .wasm paths
-justfile                # build system
+yatr.toml               # build system
 ```
 
 ---
