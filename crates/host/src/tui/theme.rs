@@ -38,6 +38,9 @@ impl Theme {
     pub fn bg(&self) -> Style {
         Style::new().bg(self.background)
     }
+    pub fn bg_style(&self) -> Style {
+        Style::new().bg(self.background)
+    }
     pub fn fg(&self) -> Style {
         Style::new().fg(self.foreground).bg(self.background)
     }

@@ -6,20 +6,20 @@
 ╠══════════════╦═══════════════════════════════════════════════════════════╣
 ║ STATIONS     ║ NOW BROADCASTING ── TECH ── 104.7                         ║
 ║              ║                                                           ║
-║ ● TECH       ║ Linus weighs in on the io_uring rewrite                   ║
-║ ● BG-POL     ║                                                           ║
-║ ○ AI         ║ A proposal to refactor the io_uring submission path       ║
-║ ● WEB3       ║ landed on LKML this morning. Linus responded within four  ║
-║ ● PASTORAL   ║ hours, in a tone that maintainers will recognize. The     ║
-║ × WORLD-POL  ║ thread is short but instructive...                        ║
-║ ● ON-THIS    ║                                                           ║
-║              ║ ── LKML · 2 hours ago · 4 min read                        ║
+║ ● TECH       ║ ▶ io_uring rewrite: Linus weighs in        LKML · 2h ago  ║
+║ ● BG-POL     ║   RustConf 2026 talk schedule announced    Rust · 4h ago  ║
+║ ○ AI         ║   Memory safety in the Linux kernel         LWN · 6h ago  ║
+║ ● WEB3       ╠═══════════════════════════════════════════════════════════╣
+║ ● PASTORAL   ║ A proposal to refactor the io_uring submission path       ║
+║ × WORLD-POL  ║ landed on LKML this morning. Linus responded within four  ║
+║ ● ON-THIS    ║ hours, in a tone that maintainers will recognize...        ║
+║              ║                                                           ║
 ╠══════════════╩═══════════════════════════════════════════════════════════╣
 ║      88.1   92.4   96.7  ▼ 104.7   108.3   112.0   116.5                 ║
 ║       ·      ·      ·     ╪╪╪       ·       ·       ·                    ║
-║       BG    PAST   AI    TECH      W3      WPOL    OTOD                  ║
+║       BG    PAST   AI    TECH      W3      OTOD    WPOL                  ║
 ╠══════════════════════════════════════════════════════════════════════════╣
-║ [←/→] tune   [↑/↓] scroll   [enter] open   [q] off                       ║
+║ [←/→] tune  [↑/↓] select  [space/b] scroll body  [enter] open  [q] off  ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -216,7 +216,7 @@ crates/
       scheduler.rs      # per-station tokio task, epoch ticker
       cache.rs          # host-cache impl (sled, namespaced by callsign)
       http_guard.rs     # declared-hosts enforcement
-      tui/              # ratatui widgets: dial, now_playing, station_list, theme
+      tui/              # ratatui widgets: dial, broadcast_list, station_list, theme
   station-sdk/          # helpers for station authors (wasm32 library)
   stations/
     tech/               # TECH 104.7 — reference implementation
@@ -236,17 +236,14 @@ yatr.toml               # build system
 
 ## Keybindings
 
-| Key       | Action                                       |
-|-----------|----------------------------------------------|
-| `←` / `→` | Tune to previous / next station              |
-| `↑` / `↓` | Scroll within current broadcast              |
-| `[` / `]` | Previous / next broadcast in station buffer  |
-| `Enter`   | Open permalink in `$BROWSER`                 |
-| `r`       | Force refresh current station                |
-| `t`       | Toggle tag visibility                        |
-| `h/j/k/l` | Vim aliases                                  |
-| `q`       | Turn off the set                             |
-| `?`       | Help overlay                                 |
+| Key                 | Action                              |
+|---------------------|-------------------------------------|
+| `←` / `→` or `h`/`l` | Tune to previous / next station   |
+| `↑` / `↓` or `j`/`k` | Select previous / next broadcast  |
+| `Space` / `PageDown`  | Scroll body pane down             |
+| `b` / `PageUp`        | Scroll body pane up               |
+| `Enter` / `o`         | Open permalink in browser         |
+| `q` / `Ctrl+C`        | Turn off the set                  |
 
 ---
 

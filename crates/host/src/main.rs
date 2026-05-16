@@ -68,23 +68,31 @@ async fn main() -> Result<()> {
         );
     }
 
+    // Load all stations.
+    let mut loaded: Vec<registry::LoadedStation> = Vec::new();
+    for path in &wasm_paths {
+        match registry::load_station(Arc::clone(&engine), &linker, path, Arc::clone(&cache)).await {
+            Ok(station) => loaded.push(station),
+            Err(e) => tracing::warn!("skipping {}: {e:#}", path.display()),
+        }
+    }
+
+    // Reset last_seen for every station before the drain so the list populates
+    // with current content on each startup, regardless of previous runs.
+    for station in &loaded {
+        let _ = cache.set(&station.callsign, "last_seen", b"[]");
+    }
+
     let (tx, rx) = mpsc::channel::<scheduler::Event>(256);
     let mut meta: Vec<tui::StationMeta> = Vec::new();
 
-    for path in &wasm_paths {
-        match registry::load_station(Arc::clone(&engine), &linker, path, Arc::clone(&cache)).await {
-            Ok(station) => {
-                meta.push(tui::StationMeta {
-                    callsign:  station.callsign.clone(),
-                    name:      station.name.clone(),
-                    frequency: station.frequency.clone(),
-                });
-                scheduler::spawn_station_task(station, tx.clone());
-            }
-            Err(e) => {
-                tracing::warn!("skipping {}: {e:#}", path.display());
-            }
-        }
+    for station in loaded {
+        meta.push(tui::StationMeta {
+            callsign:  station.callsign.clone(),
+            name:      station.name.clone(),
+            frequency: station.frequency.clone(),
+        });
+        scheduler::spawn_station_task(station, tx.clone());
     }
 
     if meta.is_empty() {

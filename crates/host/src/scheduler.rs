@@ -59,10 +59,44 @@ pub async fn headless_tune(station: &mut LoadedStation) {
 }
 
 /// Spawn a tokio task that calls tune() on cadence and sends Events to the TUI.
+///
+/// On startup we drain: call tune() in a tight loop until Static/OffAir (max 30 items)
+/// so the list is populated immediately. After the drain, settle into normal cadence.
 pub fn spawn_station_task(mut station: LoadedStation, tx: mpsc::Sender<Event>) {
     let cadence = std::time::Duration::from_secs(station.cadence_secs as u64);
     tokio::spawn(async move {
+        // ── Initial drain ──────────────────────────────────────────────────
+        for _ in 0..30 {
+            match station.tune().await {
+                Ok(Signal::OnAir(b)) => {
+                    let event = Event::Broadcast {
+                        callsign:  station.callsign.clone(),
+                        id:        b.id,
+                        title:     b.title,
+                        body:      b.body,
+                        source:    b.source,
+                        permalink: b.permalink,
+                        published: b.published,
+                        tags:      b.tags,
+                    };
+                    if tx.send(event).await.is_err() { return; }
+                }
+                Ok(Signal::Static) => break,
+                Ok(Signal::OffAir(reason)) => {
+                    let _ = tx.send(Event::OffAir { callsign: station.callsign.clone(), reason }).await;
+                    break;
+                }
+                Err(e) => {
+                    let _ = tx.send(Event::Error { callsign: station.callsign.clone(), message: e.to_string() }).await;
+                    break;
+                }
+            }
+        }
+
+        // ── Normal cadence loop ────────────────────────────────────────────
         loop {
+            tokio::time::sleep(cadence).await;
+
             let event = match station.tune().await {
                 Ok(Signal::OnAir(b)) => Event::Broadcast {
                     callsign:  station.callsign.clone(),
@@ -75,21 +109,13 @@ pub fn spawn_station_task(mut station: LoadedStation, tx: mpsc::Sender<Event>) {
                     tags:      b.tags,
                 },
                 Ok(Signal::Static) => Event::Quiet(station.callsign.clone()),
-                Ok(Signal::OffAir(reason)) => Event::OffAir {
-                    callsign: station.callsign.clone(),
-                    reason,
-                },
-                Err(e) => Event::Error {
-                    callsign: station.callsign.clone(),
-                    message:  e.to_string(),
-                },
+                Ok(Signal::OffAir(reason)) => Event::OffAir { callsign: station.callsign.clone(), reason },
+                Err(e) => Event::Error { callsign: station.callsign.clone(), message: e.to_string() },
             };
 
             if tx.send(event).await.is_err() {
-                break; // TUI has dropped the receiver — we're shutting down
+                break;
             }
-
-            tokio::time::sleep(cadence).await;
         }
     });
 }

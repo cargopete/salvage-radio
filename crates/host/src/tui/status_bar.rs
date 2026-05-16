@@ -7,7 +7,7 @@ use super::theme::THEME;
 pub struct StatusBar;
 
 const KEYBINDS: &str =
-    " [←/→] tune  [↑/↓] scroll  [[ / ]] prev/next  [r] refresh  [q] off ";
+    " [←/→] tune  [↑/↓] select  [space/b] scroll body  [enter] open  [q] off ";
 
 impl Widget for StatusBar {
     fn render(self, area: Rect, buf: &mut Buffer) {

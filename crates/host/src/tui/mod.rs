@@ -3,6 +3,7 @@
 //! Main thread only (crossterm requirement).
 //! Receives Events from the scheduler via mpsc, re-renders on each event.
 
+pub mod broadcast_list;
 pub mod dial;
 pub mod now_playing;
 pub mod station_list;
@@ -27,8 +28,8 @@ use ratatui::{
 use tokio::sync::mpsc;
 
 use crate::scheduler::Event;
+use broadcast_list::{BroadcastList, BroadcastRow};
 use dial::{Dial, DialStation};
-use now_playing::NowPlaying;
 use station_list::{StationEntry, StationList, StationStatus};
 use status_bar::StatusBar;
 use theme::THEME;
@@ -58,11 +59,11 @@ struct AppStation {
 }
 
 struct App {
-    stations:   Vec<AppStation>,
-    active_idx: usize,
-    scroll:     u16,
-    buf_idx:    usize, // 0 = latest, 1 = one before, etc.
-    flash:      bool,
+    stations:    Vec<AppStation>,
+    active_idx:  usize,
+    selected:    usize, // selected item index within active station's history
+    body_scroll: u16,   // scroll offset for the body pane
+    flash:       bool,
 }
 
 impl App {
@@ -76,7 +77,7 @@ impl App {
                 history:   Vec::new(),
             })
             .collect();
-        Self { stations, active_idx: 0, scroll: 0, buf_idx: 0, flash: false }
+        Self { stations, active_idx: 0, selected: 0, body_scroll: 0, flash: false }
     }
 
     fn tune_next(&mut self) {
@@ -94,8 +95,31 @@ impl App {
     }
 
     fn reset_view(&mut self) {
-        self.scroll = 0;
-        self.buf_idx = 0;
+        self.selected = 0;
+        self.body_scroll = 0;
+    }
+
+    fn select_next(&mut self) {
+        let hist_len = self.stations[self.active_idx].history.len();
+        if self.selected + 1 < hist_len {
+            self.selected += 1;
+            self.body_scroll = 0;
+        }
+    }
+
+    fn select_prev(&mut self) {
+        if self.selected > 0 {
+            self.selected -= 1;
+            self.body_scroll = 0;
+        }
+    }
+
+    fn current_permalink(&self) -> Option<&str> {
+        self.stations
+            .get(self.active_idx)?
+            .history
+            .get(self.selected)
+            .map(|e| e.permalink.as_str())
     }
 
     fn apply_event(&mut self, event: Event) {
@@ -104,6 +128,7 @@ impl App {
                 if let Some(st) = self.stations.iter_mut().find(|s| s.callsign == callsign) {
                     st.status = StationStatus::OnAir;
                     st.history.insert(0, BroadcastEntry { id, title, body, source, permalink, published, tags });
+                    st.history.sort_by_key(|b| std::cmp::Reverse(b.published));
                     st.history.truncate(50);
                 }
             }
@@ -163,26 +188,20 @@ pub async fn run(mut rx: mpsc::Receiver<Event>, meta: Vec<StationMeta>) -> Resul
                     CEvent::Key(k) => match k.code {
                         KeyCode::Char('q') => break,
                         KeyCode::Char('c') if k.modifiers.contains(KeyModifiers::CONTROL) => break,
+                        KeyCode::Enter | KeyCode::Char('o') => {
+                            if let Some(url) = app.current_permalink() {
+                                open_url(url);
+                            }
+                        }
                         KeyCode::Right | KeyCode::Char('l') => app.tune_next(),
                         KeyCode::Left  | KeyCode::Char('h') => app.tune_prev(),
-                        KeyCode::Down  | KeyCode::Char('j') => {
-                            app.scroll = app.scroll.saturating_add(3);
+                        KeyCode::Down  | KeyCode::Char('j') => app.select_next(),
+                        KeyCode::Up    | KeyCode::Char('k') => app.select_prev(),
+                        KeyCode::Char(' ') | KeyCode::PageDown => {
+                            app.body_scroll = app.body_scroll.saturating_add(3);
                         }
-                        KeyCode::Up    | KeyCode::Char('k') => {
-                            app.scroll = app.scroll.saturating_sub(3);
-                        }
-                        KeyCode::Char('[') => {
-                            let hist_len = app.stations[app.active_idx].history.len();
-                            if app.buf_idx + 1 < hist_len {
-                                app.buf_idx += 1;
-                                app.scroll = 0;
-                            }
-                        }
-                        KeyCode::Char(']') => {
-                            if app.buf_idx > 0 {
-                                app.buf_idx -= 1;
-                                app.scroll = 0;
-                            }
+                        KeyCode::Char('b') | KeyCode::PageUp => {
+                            app.body_scroll = app.body_scroll.saturating_sub(3);
                         }
                         _ => continue,
                     }
@@ -261,27 +280,29 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>, app: &App) -
             h[0],
         );
 
-        // Now playing
+        // Broadcast list
         let active = &app.stations[app.active_idx];
-        let broadcast = active.history.get(app.buf_idx);
         let now = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap_or(Duration::ZERO)
             .as_secs();
-        let rel_time = broadcast.map(|b| relative_time(b.published, now));
-        let read_time = broadcast.map(|b| estimate_read_time(&b.body));
+        let time_strs: Vec<String> = active.history.iter()
+            .map(|b| relative_time(b.published, now))
+            .collect();
+        let rows: Vec<BroadcastRow> = active.history.iter().zip(&time_strs).map(|(b, t)| BroadcastRow {
+            title:  b.title.as_str(),
+            source: b.source.as_str(),
+            time:   t.as_str(),
+            body:   b.body.as_str(),
+        }).collect();
         f.render_widget(
-            NowPlaying {
-                callsign:      &active.callsign,
-                frequency:     &active.frequency,
-                title:         broadcast.map(|b| b.title.as_str()),
-                body:          broadcast.map(|b| b.body.as_str()),
-                source:        broadcast.map(|b| b.source.as_str()),
-                relative_time: rel_time.as_deref(),
-                read_time:     read_time.as_deref(),
-                tags:          broadcast.map(|b| b.tags.as_slice()).unwrap_or(&[]),
-                scroll_offset: app.scroll,
-                flash:         app.flash,
+            BroadcastList {
+                callsign:    &active.callsign,
+                frequency:   &active.frequency,
+                items:       &rows,
+                selected:    app.selected,
+                flash:       app.flash,
+                body_scroll: app.body_scroll,
             },
             h[1],
         );
@@ -302,6 +323,15 @@ fn draw(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>, app: &App) -
     Ok(())
 }
 
+fn open_url(url: &str) {
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open").arg(url).spawn();
+    #[cfg(target_os = "linux")]
+    let _ = std::process::Command::new("xdg-open").arg(url).spawn();
+    #[cfg(not(any(target_os = "macos", target_os = "linux")))]
+    let _ = std::process::Command::new("start").arg(url).spawn();
+}
+
 fn relative_time(published: u64, now: u64) -> String {
     let diff = now.saturating_sub(published);
     if diff < 60      { "just now".to_string() }
@@ -310,8 +340,3 @@ fn relative_time(published: u64, now: u64) -> String {
     else                 { format!("{} days ago", diff / 86400) }
 }
 
-fn estimate_read_time(body: &str) -> String {
-    let words = body.split_whitespace().count();
-    let mins = ((words as f32 / 200.0).ceil() as u32).max(1);
-    if mins == 1 { "1 min read".to_string() } else { format!("{mins} min read") }
-}
