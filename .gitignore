@@ -1,4 +1,3 @@
 /target
-wit/deps/
 *.wasm
 .DS_Store

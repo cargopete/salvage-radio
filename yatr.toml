@@ -4,14 +4,14 @@
 # ── Setup ─────────────────────────────────────────────────────────────────────
 
 [tasks.setup]
-desc = "Install required tools and add wasm32-wasip2 target"
+desc = "Install required tools and add wasm32-wasip1 target"
 run = [
     "cargo install cargo-component wkg wasm-tools",
-    "rustup target add wasm32-wasip2",
+    "rustup target add wasm32-wasip1",
 ]
 
 [tasks.fetch-wit]
-desc = "Fetch WASI WIT dependencies into wit/deps/ (run once after clone)"
+desc = "Re-fetch WASI WIT dependencies into wit/deps/ (committed; only needed when upgrading WASI)"
 no_cache = true
 run = ["wkg wit fetch"]
 
@@ -39,7 +39,7 @@ desc = "Build the TECH station component (release)"
 run = ["cargo component build --release"]
 cwd = "crates/stations/tech"
 sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
-outputs = ["target/wasm32-wasip2/release/station_tech.wasm"]
+outputs = ["target/wasm32-wasip1/release/station_tech.wasm"]
 
 [tasks.check-tech]
 desc = "cargo-component check on the TECH station"
@@ -49,7 +49,7 @@ cwd = "crates/stations/tech"
 [tasks.inspect-tech]
 desc = "Show the exported WIT interface of the built TECH station"
 depends = ["build-tech"]
-run = ["wasm-tools component wit crates/stations/tech/target/wasm32-wasip2/release/station_tech.wasm"]
+run = ["wasm-tools component wit crates/stations/tech/target/wasm32-wasip1/release/station_tech.wasm"]
 
 # ── All ───────────────────────────────────────────────────────────────────────
 
@@ -81,5 +81,5 @@ cwd = "crates/stations/tech"
 # ── Milestones ────────────────────────────────────────────────────────────────
 
 [tasks.m0]
-desc = "M0 acceptance: fetch WIT deps, build tech station, inspect interface"
-depends = ["fetch-wit", "inspect-tech"]
+desc = "M0 acceptance: build tech station, inspect exported interface"
+depends = ["inspect-tech"]

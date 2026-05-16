@@ -1,3 +1,5 @@
+[workspace]
+
 [package]
 name    = "station-tech"
 version = "0.1.0"
@@ -7,18 +9,21 @@ edition = "2024"
 crate-type = ["cdylib"]
 
 [dependencies]
-salvage-sdk = { path = "../../station-sdk" }
-anyhow      = "1"
+salvage-sdk    = { path = "../../station-sdk" }
+anyhow         = "1"
+wit-bindgen-rt = { version = "0.44.0", features = ["bitflags"] }
 
-# cargo-component metadata
 [package.metadata.component]
-package = "radio:station@0.1.0"
+package = "radio:station"
 
 [package.metadata.component.target]
-path = "../../../wit"
+path  = "../../../wit"
+world = "radio-station"
 
-# WASI packages fetched by wkg on first `cargo component build`
 [package.metadata.component.target.dependencies]
-"wasi:http"   = "0.2.3"
-"wasi:clocks" = "0.2.3"
-"wasi:io"     = "0.2.3"
+"wasi:http"   = { path = "../../../wit/deps/wasi-http-0.2.3" }
+"wasi:clocks" = { path = "../../../wit/deps/wasi-clocks-0.2.3" }
+"wasi:io"     = { path = "../../../wit/deps/wasi-io-0.2.3" }
+"wasi:random" = { path = "../../../wit/deps/wasi-random-0.2.3" }
+"wasi:cli"    = { path = "../../../wit/deps/wasi-cli-0.2.3" }
+

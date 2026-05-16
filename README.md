@@ -164,9 +164,6 @@ yatr setup
 ## Building
 
 ```sh
-# First time after cloning — fetches WASI WIT deps into wit/deps/
-yatr fetch-wit
-
 # Build host binary + all station components
 yatr build
 
