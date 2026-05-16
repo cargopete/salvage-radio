@@ -1,0 +1,67 @@
+package radio:station@0.1.0;
+
+/// The core station interface.
+///
+/// Stations are .wasm components that export this interface.
+/// The host calls describe() once at startup and tune() on each tick.
+interface station {
+    /// Static metadata about the station. Called once at registration time.
+    /// Must be fast and cheap — no I/O inside describe().
+    record metadata {
+        callsign:        string,         // "BG-POL", "PASTORAL-1" — short ID
+        name:            string,         // "Bulgarian Politics"
+        description:     string,         // one paragraph, plain text
+        frequency:       string,         // "92.4" — aesthetic only, shown on dial
+        operator:        string,         // curator / author name
+        cadence-seconds: u32,            // hint: how often the host should call tune()
+        declared-hosts:  list<string>,   // hostnames the station will fetch
+                                         // host uses this to scope HTTP access
+    }
+
+    /// A single piece of content the station has decided to broadcast.
+    record broadcast {
+        id:        string,          // stable, opaque, station-chosen; host uses for dedup
+        title:     string,
+        body:      string,          // plain text or simple markdown — never HTML
+        source:    string,          // human-readable origin ("BBC", "Hacker News")
+        permalink: string,          // URL the user can open externally
+        published: u64,             // unix seconds; 0 means unknown
+        tags:      list<string>,    // station-defined taxonomy
+    }
+
+    /// What the station has to say when the host tunes in.
+    variant signal {
+        on-air(broadcast),    // a fresh broadcast is ready
+        %static,              // nothing new; station is quiet but healthy
+        off-air(string),      // can't fetch; string is human-readable reason
+    }
+
+    /// Called once at startup. Returns static metadata.
+    describe: func() -> metadata;
+
+    /// Called on the station's declared cadence.
+    /// Returns one broadcast per call; host deduplicates by broadcast.id.
+    /// Migration path: when WASI async/streams are stable, add tune-stream()
+    /// as an optional export alongside this one.
+    tune: func() -> signal;
+}
+
+/// Key-value scratch-space the host provides for per-station state.
+/// Keys are station-scoped — the host namespaces them automatically.
+/// The host MAY evict entries; cache is best-effort, not durable.
+interface host-cache {
+    get: func(key: string) -> option<list<u8>>;
+    set: func(key: string, value: list<u8>);
+}
+
+/// The world every station component implements.
+world radio-station {
+    import wasi:http/outgoing-handler@0.2.3;
+    import wasi:http/types@0.2.3;
+    import wasi:clocks/wall-clock@0.2.3;
+    import wasi:clocks/monotonic-clock@0.2.3;
+    import wasi:io/streams@0.2.3;
+    import host-cache;
+
+    export station;
+}

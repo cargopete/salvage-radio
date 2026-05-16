@@ -1,0 +1,24 @@
+[package]
+name    = "station-tech"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+salvage-sdk = { path = "../../station-sdk" }
+anyhow      = "1"
+
+# cargo-component metadata
+[package.metadata.component]
+package = "radio:station@0.1.0"
+
+[package.metadata.component.target]
+path = "../../../wit"
+
+# WASI packages fetched by wkg on first `cargo component build`
+[package.metadata.component.target.dependencies]
+"wasi:http"   = "0.2.3"
+"wasi:clocks" = "0.2.3"
+"wasi:io"     = "0.2.3"

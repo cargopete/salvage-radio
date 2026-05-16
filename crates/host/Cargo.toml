@@ -1,0 +1,28 @@
+[package]
+name    = "salvage-radio"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "salvage-radio"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace    = true
+thiserror.workspace = true
+serde.workspace     = true
+serde_json.workspace = true
+tracing.workspace   = true
+
+wasmtime          = { version = "31", features = ["component-model", "async", "cranelift", "cache"] }
+wasmtime-wasi     = "31"
+wasmtime-wasi-http = "31"
+
+ratatui    = { version = "0.29", features = ["crossterm"] }
+crossterm  = { version = "0.28", features = ["event-stream"] }
+tokio      = { version = "1", features = ["full"] }
+sled       = "0.34"
+toml       = "0.8"
+url        = "2"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+directories = "5"

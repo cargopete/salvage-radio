@@ -1,0 +1,36 @@
+# Salvage Radio station registry.
+# Listed in dial order. Frequencies are aesthetic only.
+
+[[station]]
+path     = "./stations/bg-politics.wasm"
+position = 1
+
+[[station]]
+path     = "./stations/pastoral.wasm"
+position = 2
+
+[[station]]
+path     = "./stations/ai.wasm"
+position = 3
+
+[[station]]
+path     = "./stations/tech.wasm"
+position = 4
+
+[[station]]
+path     = "./stations/web3.wasm"
+position = 5
+
+[[station]]
+path     = "./stations/world-politics.wasm"
+position = 6
+
+[[station]]
+path     = "./stations/on-this-day.wasm"
+position = 7
+
+[host]
+default_station = "TECH"
+cache_dir       = "~/.local/share/salvage-radio"
+state_dir       = "~/.local/state/salvage-radio"
+log_level       = "info"
