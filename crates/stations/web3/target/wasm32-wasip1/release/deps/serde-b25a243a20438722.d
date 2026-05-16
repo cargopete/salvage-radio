@@ -1,0 +1,14 @@
+/Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/deps/serde-b25a243a20438722.d: /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/build/serde-ac29f58c20a14d07/out/private.rs
+
+/Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/deps/libserde-b25a243a20438722.rlib: /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/build/serde-ac29f58c20a14d07/out/private.rs
+
+/Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/deps/libserde-b25a243a20438722.rmeta: /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs /Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs /Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/build/serde-ac29f58c20a14d07/out/private.rs
+
+/Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/lib.rs:
+/Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/integer128.rs:
+/Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/mod.rs:
+/Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/de.rs:
+/Users/pepe/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/serde-1.0.228/src/private/ser.rs:
+/Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/build/serde-ac29f58c20a14d07/out/private.rs:
+
+# env-dep:OUT_DIR=/Users/pepe/Projects/salvage-radio/crates/stations/web3/target/wasm32-wasip1/release/build/serde-ac29f58c20a14d07/out

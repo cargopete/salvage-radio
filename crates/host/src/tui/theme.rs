@@ -6,7 +6,7 @@
 //!
 //! Truecolor. 256-colour fallback: copper→166, brass→137, rust→130, tarnish→240, parchment→187.
 
-use ratatui::style::{Color, Style, Stylize};
+use ratatui::style::{Color, Style};
 
 pub struct Theme {
     pub background:    Color,

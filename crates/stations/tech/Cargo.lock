@@ -615,6 +615,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "salvage-sdk",
+ "serde_json",
  "wit-bindgen-rt 0.44.0",
 ]
 

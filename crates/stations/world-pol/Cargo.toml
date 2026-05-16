@@ -1,0 +1,29 @@
+[workspace]
+
+[package]
+name    = "station-world-pol"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+salvage-sdk    = { path = "../../station-sdk" }
+anyhow         = "1"
+serde_json     = "1"
+wit-bindgen-rt = { version = "0.44.0", features = ["bitflags"] }
+
+[package.metadata.component]
+package = "radio:station"
+
+[package.metadata.component.target]
+path  = "../../../wit"
+world = "radio-station"
+
+[package.metadata.component.target.dependencies]
+"wasi:http"   = { path = "../../../wit/deps/wasi-http-0.2.3" }
+"wasi:clocks" = { path = "../../../wit/deps/wasi-clocks-0.2.3" }
+"wasi:io"     = { path = "../../../wit/deps/wasi-io-0.2.3" }
+"wasi:random" = { path = "../../../wit/deps/wasi-random-0.2.3" }
+"wasi:cli"    = { path = "../../../wit/deps/wasi-cli-0.2.3" }

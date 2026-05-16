@@ -69,43 +69,65 @@ Stations get `wasi:http` for outgoing requests (scoped to their declared hosts),
 A basic station is under 100 lines. The reference implementation (`crates/stations/tech/`) shows the full shape:
 
 ```rust
-#[station]
+mod bindings;
+
+use bindings::exports::radio::station::station::{Broadcast, Guest, Metadata, Signal};
+use bindings::radio::station::host_cache;
+use salvage_sdk::{html_to_text, parse_rss};
+
 struct TechStation;
 
-impl Station for TechStation {
+impl Guest for TechStation {
     fn describe() -> Metadata {
         Metadata {
-            callsign:        "TECH".into(),
-            name:            "Tech".into(),
-            description:     "Engineering deep-dives. HN >= 150 points, lobste.rs >= 10 votes.".into(),
-            frequency:       "104.7".into(),
-            operator:        "Pete".into(),
+            callsign:        "TECH".to_string(),
+            name:            "Tech".to_string(),
+            description:     "Engineering deep-dives.".to_string(),
+            frequency:       "104.7".to_string(),
+            operator:        "Pete".to_string(),
             cadence_seconds: 600,
-            declared_hosts:  vec!["hnrss.org".into(), "lobste.rs".into()],
+            declared_hosts:  vec!["hnrss.org".to_string()],
         }
     }
 
     fn tune() -> Signal {
-        let cache = Cache::new();
-        let last_seen: Vec<String> = cache.get_json("last_seen").unwrap_or_default();
+        // deduplication via the host-supplied key-value cache
+        let last_seen: Vec<String> = host_cache::get("last_seen")
+            .and_then(|b| serde_json::from_slice(&b).ok())
+            .unwrap_or_default();
 
-        let items = match fetch_all() {
-            Ok(items) => items,
+        let bytes = match http_get("https://hnrss.org/frontpage?points=150") {
+            Ok(b) => b,
             Err(e) => return Signal::OffAir(format!("fetch failed: {e}")),
         };
 
-        match items.into_iter().find(|i| !last_seen.contains(&i.id)) {
+        let mut items = parse_rss(&bytes).unwrap_or_default();
+        items.retain(|i| !last_seen.contains(&i.id));
+
+        match items.into_iter().next() {
             Some(item) => {
-                // update cache, return broadcast
-                Signal::OnAir(item.into())
+                let mut seen = last_seen;
+                seen.push(item.id.clone());
+                seen.truncate(200);
+                host_cache::set("last_seen", &serde_json::to_vec(&seen).unwrap());
+                Signal::OnAir(Broadcast {
+                    id: item.id, title: item.title,
+                    body: html_to_text(&item.body_html),
+                    source: item.source_name, permalink: item.permalink,
+                    published: item.published, tags: vec![],
+                })
             }
             None => Signal::Static,
         }
     }
 }
+
+bindings::export!(TechStation with_types_in bindings);
 ```
 
-Stations are distributed as single `.wasm` files. Drop one into the directory, add a line to `stations.toml`, and it's on the dial.
+Outgoing HTTP is done via `wasi:http/outgoing-handler` (synchronous polling — no async executor needed). The station gets no filesystem, no environment, no arbitrary sockets. Only the hosts listed in `declared_hosts` are reachable (enforced by the host).
+
+Stations are distributed as single `.wasm` files. See [`docs/authoring-guide.md`](docs/authoring-guide.md) for the full process of building and registering one.
 
 ---
 
@@ -115,10 +137,10 @@ Stations are distributed as single `.wasm` files. Drop one into the directory, a
 |------------|-------|------------------------------------------------------|
 | `BG-POL`   | 88.1  | Mediapool, Dnevnik, Capital, Sega                    |
 | `PASTORAL` | 92.4  | Small-press essays, country-life blogs — max 2/day   |
-| `AI`       | 96.7  | Anthropic, DeepMind, Meta AI, ArXiv cs.LG            |
+| `AI`       | 96.7  | ArXiv cs.AI/cs.LG, Hugging Face Blog                 |
 | `TECH`     | 104.7 | HN ≥150pts, lobste.rs ≥10 votes                      |
-| `WEB3`     | 108.3 | Graph Foundation, Vitalik, Paradigm, EF               |
-| `WORLD-POL`| 116.5 | Reuters, Al Jazeera, FT, Guardian                    |
+| `WEB3`     | 108.3 | Vitalik, EF Blog, Week in Ethereum                   |
+| `WORLD-POL`| 116.5 | Reuters, Al Jazeera, Guardian                        |
 | `ON-THIS`  | 112.0 | Wikipedia "on this day" — one event per 6 hours      |
 
 `PASTORAL` is the soul of the project. Its dial indicator will most often read `○` — quiet. When something arrives, it was worth waiting for.
@@ -129,27 +151,27 @@ Stations are distributed as single `.wasm` files. Drop one into the directory, a
 
 ## Status
 
-Currently working toward **M0**.
+All milestones complete. **v0.1.0.**
 
 | Milestone | Scope                                            | Status        |
 |-----------|--------------------------------------------------|---------------|
-| M0        | WIT compiles; tech station builds to `.wasm`     | in progress   |
-| M1        | Headless host; loads station; stdout output      | todo          |
-| M2        | Pastoral station; WIT survives heterogeneous use | todo          |
-| M3        | TUI shell — layout, palette, keybindings         | todo          |
-| M4        | Polish — warmup sequence, flicker, quit animation| todo          |
-| M5        | All seven stations                               | todo          |
-| M6        | Hardening — epoch interruption, sandboxing       | todo          |
-| M7        | Cache persistence across restarts                | todo          |
-| M8        | Station authoring guide; release                 | todo          |
+| M0        | WIT compiles; tech station builds to `.wasm`     | done          |
+| M1        | Headless host; loads station; stdout output      | done          |
+| M2        | Pastoral station; WIT survives heterogeneous use | done          |
+| M3        | TUI shell — layout, palette, keybindings         | done          |
+| M4        | Polish — warmup sequence, flicker, quit animation| done          |
+| M5        | All seven stations                               | done          |
+| M6        | Hardening — epoch interruption, sandboxing       | done          |
+| M7        | Cache persistence across restarts                | done          |
+| M8        | Station authoring guide; release                 | done          |
 
-No deadlines. This is a hobby project.
+This is a hobby project.
 
 ---
 
 ## Requirements
 
-- Rust stable with `wasm32-wasip2` target
+- Rust stable with `wasm32-wasip1` target
 - [`cargo-component`](https://github.com/bytecodealliance/cargo-component)
 - [`wkg`](https://github.com/bytecodealliance/wkg)
 - [`wasm-tools`](https://github.com/bytecodealliance/wasm-tools)
@@ -167,13 +189,15 @@ yatr setup
 # Build host binary + all station components
 yatr build
 
-# Run
+# Run the TUI (M3+)
 yatr run
 ```
 
 ```sh
-# M0 acceptance: build tech station and inspect its exported interface
-yatr m0
+# Milestone acceptance checks
+yatr m0   # build tech station, inspect exported WIT interface
+yatr m1   # headless: load TECH, call tune(), print to stdout
+yatr m2   # headless: load PASTORAL — same WIT contract, different editorial logic
 ```
 
 ---
@@ -196,7 +220,15 @@ crates/
   station-sdk/          # helpers for station authors (wasm32 library)
   stations/
     tech/               # TECH 104.7 — reference implementation
-stations.toml           # dial order and .wasm paths
+    pastoral/           # PASTORAL 92.4
+    ai/                 # AI 96.7
+    bg-pol/             # BG-POL 88.1
+    web3/               # WEB3 108.3
+    on-this/            # ON-THIS 112.0
+    world-pol/          # WORLD-POL 116.5
+docs/
+  rfc-001.md            # design rationale
+  authoring-guide.md    # how to write a station
 yatr.toml               # build system
 ```
 
@@ -218,8 +250,9 @@ yatr.toml               # build system
 
 ---
 
-## Design notes
+## Further reading
 
-The full design rationale — the WIT interface decisions, capability sandbox, TUI aesthetic, station editorial philosophy — is in [`docs/rfc-001.md`](docs/rfc-001.md).
+- [`docs/rfc-001.md`](docs/rfc-001.md) — full design rationale: WIT interface decisions, capability sandbox, TUI aesthetic, station editorial philosophy
+- [`docs/authoring-guide.md`](docs/authoring-guide.md) — how to write and register a new station
 
 The short version: the aesthetic is **recovered industrial equipment**, not steampunk costume. Brass, not gold. The palette has ten colours; nine of them are earth tones. The tenth (verdigris) appears in one place. There are exactly two pieces of motion in the running application: a warm-up sequence on startup and a one-frame flicker when a new broadcast arrives on the tuned station. Both are there because they earn their keep. Everything else is still.

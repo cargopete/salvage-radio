@@ -19,19 +19,19 @@ impl Cache {
     }
 
     /// Namespaced get. Returns None if the key is absent.
-    pub fn get(&self, callsign: &str, key: &str) -> Result<Option<Vec<u8>>> {
+    pub fn get(&self, callsign: &str, key: &str) -> sled::Result<Option<Vec<u8>>> {
         let k = namespaced(callsign, key);
-        Ok(self.db.get(k)?.map(|v| v.to_vec()))
+        self.db.get(k).map(|opt| opt.map(|v| v.to_vec()))
     }
 
     /// Namespaced set.
-    pub fn set(&self, callsign: &str, key: &str, value: &[u8]) -> Result<()> {
+    pub fn set(&self, callsign: &str, key: &str, value: &[u8]) -> sled::Result<()> {
         let k = namespaced(callsign, key);
         self.db.insert(k, value)?;
         Ok(())
     }
 
-    /// Flush to disk. Call periodically or on clean shutdown.
+    /// Flush to disk. Called on clean shutdown.
     pub fn flush(&self) -> Result<()> {
         self.db.flush()?;
         Ok(())

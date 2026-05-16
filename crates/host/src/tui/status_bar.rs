@@ -7,11 +7,11 @@ use super::theme::THEME;
 pub struct StatusBar;
 
 const KEYBINDS: &str =
-    " [←/→] tune  [↑/↓] scroll  [ [ / ] ] prev/next  [enter] open  [r] refresh  [q] off  [?] help ";
+    " [←/→] tune  [↑/↓] scroll  [[ / ]] prev/next  [r] refresh  [q] off ";
 
 impl Widget for StatusBar {
-    fn render(self, _area: Rect, _buf: &mut Buffer) {
-        // TODO M3: fill area with THEME.background, render KEYBINDS in tarnish style.
-        let _ = (KEYBINDS, &THEME);
+    fn render(self, area: Rect, buf: &mut Buffer) {
+        buf.set_style(area, THEME.tarnish());
+        buf.set_string(area.left(), area.top(), KEYBINDS, THEME.tarnish());
     }
 }

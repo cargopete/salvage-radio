@@ -51,11 +51,67 @@ desc = "Show the exported WIT interface of the built TECH station"
 depends = ["build-tech"]
 run = ["wasm-tools component wit crates/stations/tech/target/wasm32-wasip1/release/station_tech.wasm"]
 
+[tasks.build-pastoral]
+desc = "Build the PASTORAL station component (release)"
+run = ["cargo component build --release"]
+cwd = "crates/stations/pastoral"
+sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
+outputs = ["target/wasm32-wasip1/release/station_pastoral.wasm"]
+
+[tasks.check-pastoral]
+desc = "cargo-component check on the PASTORAL station"
+run = ["cargo component check"]
+cwd = "crates/stations/pastoral"
+
+[tasks.inspect-pastoral]
+desc = "Show the exported WIT interface of the built PASTORAL station"
+depends = ["build-pastoral"]
+run = ["wasm-tools component wit crates/stations/pastoral/target/wasm32-wasip1/release/station_pastoral.wasm"]
+
 # ── All ───────────────────────────────────────────────────────────────────────
+
+[tasks.build-bg-pol]
+desc = "Build the BG-POL station component (release)"
+run = ["cargo component build --release"]
+cwd = "crates/stations/bg-pol"
+sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
+outputs = ["target/wasm32-wasip1/release/station_bg_pol.wasm"]
+
+[tasks.build-ai]
+desc = "Build the AI station component (release)"
+run = ["cargo component build --release"]
+cwd = "crates/stations/ai"
+sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
+outputs = ["target/wasm32-wasip1/release/station_ai.wasm"]
+
+[tasks.build-web3]
+desc = "Build the WEB3 station component (release)"
+run = ["cargo component build --release"]
+cwd = "crates/stations/web3"
+sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
+outputs = ["target/wasm32-wasip1/release/station_web3.wasm"]
+
+[tasks.build-world-pol]
+desc = "Build the WORLD-POL station component (release)"
+run = ["cargo component build --release"]
+cwd = "crates/stations/world-pol"
+sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
+outputs = ["target/wasm32-wasip1/release/station_world_pol.wasm"]
+
+[tasks.build-on-this]
+desc = "Build the ON-THIS station component (release)"
+run = ["cargo component build --release"]
+cwd = "crates/stations/on-this"
+sources = ["src/**/*.rs", "Cargo.toml", "../../../Cargo.lock"]
+outputs = ["target/wasm32-wasip1/release/station_on_this.wasm"]
 
 [tasks.build]
 desc = "Build everything"
-depends = ["build-host", "build-tech"]
+depends = [
+    "build-host",
+    "build-bg-pol", "build-pastoral", "build-ai",
+    "build-tech", "build-web3", "build-on-this", "build-world-pol",
+]
 
 # ── Dev tooling ───────────────────────────────────────────────────────────────
 
@@ -65,6 +121,12 @@ run = [
     "cargo fmt -p salvage-radio",
     "cargo fmt --manifest-path crates/station-sdk/Cargo.toml",
     "cargo fmt --manifest-path crates/stations/tech/Cargo.toml",
+    "cargo fmt --manifest-path crates/stations/pastoral/Cargo.toml",
+    "cargo fmt --manifest-path crates/stations/bg-pol/Cargo.toml",
+    "cargo fmt --manifest-path crates/stations/ai/Cargo.toml",
+    "cargo fmt --manifest-path crates/stations/web3/Cargo.toml",
+    "cargo fmt --manifest-path crates/stations/world-pol/Cargo.toml",
+    "cargo fmt --manifest-path crates/stations/on-this/Cargo.toml",
 ]
 
 [tasks.lint]
@@ -83,3 +145,33 @@ cwd = "crates/stations/tech"
 [tasks.m0]
 desc = "M0 acceptance: build tech station, inspect exported interface"
 depends = ["inspect-tech"]
+
+[tasks.m1]
+desc = "M1 acceptance: headless host — load TECH station, call tune(), print to stdout"
+depends = ["build-tech", "build-host"]
+no_cache = true
+run = ["target/release/salvage-radio"]
+
+[tasks.m2]
+desc = "M2 acceptance: load PASTORAL station (different sources, daily budget) — same WIT contract"
+depends = ["build-pastoral", "build-host"]
+no_cache = true
+run = ["target/release/salvage-radio crates/stations/pastoral/target/wasm32-wasip1/release/station_pastoral.wasm"]
+
+[tasks.m3]
+desc = "M3 acceptance: full TUI — load all stations, run interactive terminal UI"
+depends = ["build-tech", "build-pastoral", "build-host"]
+no_cache = true
+run = ["target/release/salvage-radio"]
+
+[tasks.m4]
+desc = "M4 acceptance: run TUI — observe warmup sequence, broadcast flicker, 'SIGNING OFF' on quit"
+depends = ["build-tech", "build-pastoral", "build-host"]
+no_cache = true
+run = ["target/release/salvage-radio"]
+
+[tasks.m5]
+desc = "M5 acceptance: all seven stations on the dial"
+depends = ["build", "build-host"]
+no_cache = true
+run = ["target/release/salvage-radio"]

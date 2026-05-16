@@ -1,0 +1,2 @@
+cargo:rustc-link-lib=wit_bindgen_cabi_realloc0_35_0
+cargo:rustc-link-search=native=/Users/pepe/Projects/salvage-radio/crates/stations/ai/target/wasm32-wasip1/release/build/wit-bindgen-rt-67c45284e15afc51/out
